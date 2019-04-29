@@ -28,7 +28,7 @@ from lms.djangoapps.course_api.blocks.api import get_blocks
 from lms.djangoapps.commerce.utils import EcommerceService
 from lms.djangoapps.courseware.courses import get_course_with_access
 from lms.djangoapps.discussion.views import create_user_profile_context
-from lms.djangoapps.grades.course_grade_factory import CourseGradeFactory
+from lms.djangoapps.grades.api import CourseGradeFactory
 from openedx.features.course_experience import default_course_url_name
 from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user
 
