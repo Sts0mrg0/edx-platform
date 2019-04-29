@@ -133,7 +133,7 @@ def get_recently_modified_certificates(course_keys=None, start_date=None, end_da
     parameters and ordered by modified_date.
     """
     cert_filter_args = {}
-    
+
     if course_keys:
         cert_filter_args['course_id__in'] = course_keys
 
