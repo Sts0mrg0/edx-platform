@@ -2,8 +2,9 @@
 API Serializers
 """
 from rest_framework import serializers
+from six import text_type
 
-from lms.djangoapps.program_enrollments.models import ProgramEnrollment
+from lms.djangoapps.program_enrollments.models import ProgramCourseEnrollment, ProgramEnrollment
 
 
 # pylint: disable=abstract-method
@@ -40,3 +41,25 @@ class ProgramEnrollmentListSerializer(serializers.Serializer):
 
     def get_account_exists(self, obj):
         return bool(obj.user)
+
+
+class ProgramCourseEnrollmentListSerializer(serializers.Serializer):
+    """
+    Serializer for listing course enrollments in a program.
+    """
+    student_key = serializers.SerializerMethodField()
+    status = serializers.CharField()
+    account_exists = serializers.SerializerMethodField()
+    curriculum_uuid = serializers.SerializerMethodField()
+
+    class Meta(object):
+        model = ProgramCourseEnrollment
+
+    def get_student_key(self, obj):
+        return obj.program_enrollment.external_user_key
+
+    def get_account_exists(self, obj):
+        return bool(obj.program_enrollment.user)
+
+    def get_curriculum_uuid(self, obj):
+        return text_type(obj.program_enrollment.curriculum_uuid)

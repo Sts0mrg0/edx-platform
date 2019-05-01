@@ -5,9 +5,10 @@ from uuid import uuid4
 
 import factory
 from factory.django import DjangoModelFactory
+from opaque_keys.edx.keys import CourseKey
 
 from lms.djangoapps.program_enrollments import models
-from student.tests.factories import UserFactory
+from student.tests.factories import CourseEnrollmentFactory, UserFactory
 
 
 class ProgramEnrollmentFactory(DjangoModelFactory):
@@ -20,3 +21,14 @@ class ProgramEnrollmentFactory(DjangoModelFactory):
     program_uuid = uuid4()
     curriculum_uuid = uuid4()
     status = 'enrolled'
+
+
+class ProgramCourseEnrollmentFactory(DjangoModelFactory):
+    """ A factory for the ProgramCourseEnrollment model. """
+    class Meta(object):
+        model = models.ProgramCourseEnrollment
+
+    program_enrollment = factory.SubFactory(ProgramEnrollmentFactory)
+    course_enrollment = factory.SubFactory(CourseEnrollmentFactory)
+    course_key = CourseKey.from_string('course-v1:edX+ToyX+Toy_Course')
+    status = 'active'
