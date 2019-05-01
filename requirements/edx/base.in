@@ -85,7 +85,7 @@ edx-rest-api-client
 edx-search
 edx-submissions
 edx-user-state-client
-edx-when
+edx-when==0.1.2
 edxval
 enum34==1.1.6                       # Backport of Enum from Python 3.4+
 event-tracking
