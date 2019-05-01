@@ -23,3 +23,13 @@ class StudentConfig(AppConfig):
         from django.contrib.auth.models import User
         from .signals.receivers import on_user_updated
         pre_save.connect(on_user_updated, sender=User)
+
+        # The django-simple-history model on CourseEnrollment creates performance
+        # problems in testing, we mock it here so that the mock impacts all tests.
+        from django.contrib.auth import settings
+
+        if hasattr(settings, 'TEST_ROOT'):
+            import student.models as student_models
+            from mock import MagicMock
+
+            student_models.CourseEnrollment.history = MagicMock()
