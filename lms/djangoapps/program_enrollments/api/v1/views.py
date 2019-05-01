@@ -220,7 +220,29 @@ class ProgramCourseEnrollmentsView(ProgramCourseRunSpecificViewMixin, APIView):
     permission_classes = (permissions.JWT_RESTRICTED_APPLICATION_OR_USER_ACCESS,)
     pagination_class = ProgramEnrollmentPagination
 
+    def patch(self, request, program_uuid=None, course_id=None):
+        """
+        Modify the program course enrollments of a list of learners
+        """
+        return self.process_enrollment_list_request(
+            request,
+            program_uuid,
+            course_id,
+            self.modify_learner_enrollment
+        )
+
     def post(self, request, program_uuid=None, course_id=None):
+        """
+        Enroll a list of students in a course in a program
+        """
+        return self.process_enrollment_list_request(
+            request,
+            program_uuid,
+            course_id,
+            self.enroll_learner_in_course
+        )
+
+    def process_enrollment_list_request(self, request, program_uuid, course_id, operation):
         """
         Enroll a list of students in a course in a program
         """
@@ -251,7 +273,7 @@ class ProgramCourseEnrollmentsView(ProgramCourseRunSpecificViewMixin, APIView):
             student_key = enrollment["student_key"]
             if student_key in results and results[student_key] == CourseEnrollmentResponseStatuses.DUPLICATED:
                 continue
-            results[student_key] = self.enroll_learner_in_course(enrollment, program_enrollments)
+            results[student_key] = operation(enrollment, program_enrollments)
 
         good_count = sum([1 for _, v in results.items() if v not in CourseEnrollmentResponseStatuses.ERROR_STATUSES])
         if not good_count:
@@ -328,3 +350,34 @@ class ProgramCourseEnrollmentsView(ProgramCourseRunSpecificViewMixin, APIView):
             status=enrollment_status,
         )
         return enrollment_status
+
+    def modify_learner_enrollment(self, enrollment_request, program_enrollment):
+        """
+        Attempts to modify the specified user's enrollment in the given course
+        in the given program
+        """
+        student_key = enrollment_request['student_key']
+        try:
+            program_enrollment = program_enrollments[student_key]
+        except KeyError:
+            return CourseEnrollmentResponseStatuses.NOT_IN_PROGRAM
+        program_course_enrollment = program_enrollment.get_program_course_enrollment(self.course_key)
+        if program_course_enrollment is None:
+            return CourseEnrollmentResponseStatuses.NOT_FOUND
+        
+        enrollment_status = enrollment_request['status']
+        current_status = program_course_enrollment.status
+        changing = enrollment_status != current_status
+        becoming_active = changing and enrollment_status == CourseEnrollmentResponseStatuses.ACTIVE
+        becoming_inactive = changing and enrollment_status == CourseEnrollmentResponseStatuses.INACTIVE
+        program_course_enrollment.status = enrollment_request
+
+        course_enrollment = program_course_enrollment.course_enrollment
+        if course_enrollment:
+            if becoming_active:
+                course_enrollment.activate()
+            elif becoming_inactive:
+                course_enrollment.deactivate()
+        elif program_enrollment.user:
+            print("log this filth")
+            
