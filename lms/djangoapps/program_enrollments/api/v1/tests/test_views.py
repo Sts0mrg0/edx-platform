@@ -311,7 +311,7 @@ class CourseEnrollmentPostTests(APITestCase, ProgramCacheTestCaseMixin):
         self.assertEqual(self.course_key, enrollment.course_key)
         course_enrollment = enrollment.course_enrollment
         if has_user:
-            self.assertIsNotNone(bool(course_enrollment))
+            self.assertIsNotNone(course_enrollment)
             self.assertEqual(expected_status == "active", course_enrollment.is_active)
             self.assertEqual(self.course_key, course_enrollment.course_id)
         else:
@@ -398,6 +398,7 @@ class CourseEnrollmentPostTests(APITestCase, ProgramCacheTestCaseMixin):
         [{'student_key': '000'}],
         ["this isn't even a dict!"],
         [{'student_key': '000', 'status': 'active'}, "bad_data"],
+        "not a list",
     )
     def test_422_unprocessable_entity_bad_data(self, post_data):
         response = self.client.post(self.default_url, post_data, format="json")

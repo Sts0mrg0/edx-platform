@@ -13,7 +13,6 @@ from rest_framework.pagination import CursorPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from course_modes.models import CourseMode
 from edx_rest_framework_extensions import permissions
 from edx_rest_framework_extensions.auth.jwt.authentication import JwtAuthentication
 from edx_rest_framework_extensions.auth.session.authentication import SessionAuthenticationAllowInactiveUser
@@ -27,7 +26,6 @@ from openedx.core.djangoapps.catalog.utils import get_programs
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 from openedx.core.lib.api.authentication import OAuth2AuthenticationAllowInactiveUser
 from openedx.core.lib.api.view_utils import DeveloperErrorViewMixin, PaginatedAPIView
-from student.models import CourseEnrollment
 
 
 def verify_program_exists(view_func):
@@ -252,7 +250,7 @@ class ProgramCourseEnrollmentsView(ProgramCourseRunSpecificViewMixin, APIView):
         enrollments = []
 
         if not isinstance(request.data, list):
-            raise ValidationError("invalid enrollment record")
+            return Response('invalid enrollment record', status.HTTP_422_UNPROCESSABLE_ENTITY)
         if len(request.data) > MAX_ENROLLMENT_RECORDS:
             return Response(
                 'enrollment limit 25', status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
@@ -265,7 +263,11 @@ class ProgramCourseEnrollmentsView(ProgramCourseRunSpecificViewMixin, APIView):
                     results[enrollment_request["student_key"]] = error_status
                 else:
                     enrollments.append(enrollment_request)
-        except (KeyError, ValidationError, TypeError):
+        except KeyError: # student_key is not in enrollment_request
+            return Response('invalid enrollment record', status.HTTP_422_UNPROCESSABLE_ENTITY)
+        except TypeError: # enrollment_request isn't a dict
+            return Response('invalid enrollment record', status.HTTP_422_UNPROCESSABLE_ENTITY)
+        except ValidationError: # there was some other error raised by the serializer
             return Response('invalid enrollment record', status.HTTP_422_UNPROCESSABLE_ENTITY)
 
         program_enrollments = self.get_existing_program_enrollments(program_uuid, enrollments)
@@ -275,7 +277,7 @@ class ProgramCourseEnrollmentsView(ProgramCourseRunSpecificViewMixin, APIView):
                 continue
             results[student_key] = operation(enrollment, program_enrollments)
 
-        good_count = sum([1 for _, v in results.items() if v not in CourseEnrollmentResponseStatuses.ERROR_STATUSES])
+        good_count = sum(1 for _, v in results.items() if v not in CourseEnrollmentResponseStatuses.ERROR_STATUSES)
         if not good_count:
             return Response(results, status.HTTP_422_UNPROCESSABLE_ENTITY)
         if good_count != len(results):
@@ -306,7 +308,7 @@ class ProgramCourseEnrollmentsView(ProgramCourseRunSpecificViewMixin, APIView):
             - enrollments: A list of enrollment requests
         Returns:
             - Dictionary mapping all student keys in the enrollment requests
-              to that user's existing program enrollment <self.program>
+              to that user's existing program enrollment in <self.program>
         """
         external_user_keys = [e["student_key"] for e in enrollments]
         existing_enrollments = ProgramEnrollment.objects.filter(
@@ -331,23 +333,10 @@ class ProgramCourseEnrollmentsView(ProgramCourseRunSpecificViewMixin, APIView):
         if program_enrollment.get_program_course_enrollment(self.course_key):
             return CourseEnrollmentResponseStatuses.CONFLICT
 
-        enrollment_status = enrollment_request['status']
-        course_enrollment = None
-        if program_enrollment.user:  # This user has an account, enroll them in the course
-            course_enrollment = CourseEnrollment.enroll(
-                program_enrollment.user,
-                self.course_key,
-                mode=CourseMode.MASTERS,
-                check_access=True,
-            )
-            if enrollment_status == CourseEnrollmentResponseStatuses.INACTIVE:
-                course_enrollment.deactivate()
-
-        ProgramCourseEnrollment.objects.create(
-            program_enrollment=program_enrollment,
-            course_enrollment=course_enrollment,
-            course_key=self.course_key,
-            status=enrollment_status,
+        enrollment_status = ProgramCourseEnrollment.enroll(
+            program_enrollment,
+            self.course_key,
+            enrollment_request['status']
         )
         return enrollment_status
 

@@ -8,6 +8,8 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+from course_modes.models import CourseMode
+from lms.djangoapps.program_enrollments.api.v1.constants import CourseEnrollmentResponseStatuses
 from model_utils.models import TimeStampedModel
 from opaque_keys.edx.django.models import CourseKeyField
 from simple_history.models import HistoricalRecords
@@ -123,3 +125,27 @@ class ProgramCourseEnrollment(TimeStampedModel):  # pylint: disable=model-missin
 
     def __str__(self):
         return '[ProgramCourseEnrollment id={}]'.format(self.id)
+
+    @classmethod
+    def enroll(cls, program_enrollment, course_key, status):
+        """
+        Create ProgramCourseEnrollment for the given course and program enrollment
+        """
+        course_enrollment = None
+        if program_enrollment.user:
+            course_enrollment = StudentCourseEnrollment.enroll(
+                program_enrollment.user,
+                course_key,
+                mode=CourseMode.MASTERS,
+                check_access=True,
+            )
+            if status == CourseEnrollmentResponseStatuses.INACTIVE:
+                course_enrollment.deactivate()
+
+        program_course_enrollment = ProgramCourseEnrollment.objects.create(
+            program_enrollment=program_enrollment,
+            course_enrollment=course_enrollment,
+            course_key=course_key,
+            status=status,
+        )
+        return program_course_enrollment.status
