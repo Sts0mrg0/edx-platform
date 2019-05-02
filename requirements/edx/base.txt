@@ -117,7 +117,7 @@ edx-i18n-tools==0.4.8
 edx-milestones==0.1.13
 edx-oauth2-provider==1.2.2
 edx-opaque-keys[django]==0.4.4
-edx-organizations==1.0.1
+edx-organizations==2.0.2
 edx-proctoring-proctortrack==1.0.5
 edx-proctoring==1.7.1
 edx-rbac==0.1.11          # via edx-enterprise
