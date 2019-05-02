@@ -8,7 +8,6 @@ from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.pagination import CursorPagination
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from six import text_type
 
 from django.contrib.auth import get_user_model

@@ -73,6 +73,7 @@ INSTALLED_APPS = (
     'courseware',
     'student',
     'openedx.core.djangoapps.site_configuration',
+    'lms.djangoapps.grades.apps.GradesConfig',
     'lms.djangoapps.certificates.apps.CertificatesConfig',
     'openedx.core.djangoapps.user_api',
     'course_modes.apps.CourseModesConfig',
@@ -100,6 +101,8 @@ MEDIA_ROOT = tempfile.mkdtemp()
 
 MICROSITE_BACKEND = 'microsite_configuration.backends.filebased.FilebasedMicrositeBackend'
 MICROSITE_TEMPLATE_BACKEND = 'microsite_configuration.backends.filebased.FilebasedMicrositeTemplateBackend'
+
+POLICY_CHANGE_GRADES_ROUTING_KEY = 'edx.core.default'
 
 SECRET_KEY = 'insecure-secret-key'
 SITE_ID = 1
