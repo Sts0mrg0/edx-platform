@@ -20,6 +20,7 @@ from lms.djangoapps.certificates.models import (
     GeneratedCertificate,
     certificate_status_for_student
 )
+from lms.djangoapps.grades.api import CourseGradeFactory
 from lms.djangoapps.verify_student.services import IDVerificationService
 from student.models import CourseEnrollment, UserProfile
 from xmodule.modulestore.django import modulestore
@@ -280,7 +281,6 @@ class XQueueCertInterface(object):
         self.request.session = {}
 
         is_whitelisted = self.whitelist.filter(user=student, course_id=course_id, whitelist=True).exists()
-        from lms.djangoapps.grades.api import CourseGradeFactory
         course_grade = CourseGradeFactory().read(student, course)
         enrollment_mode, __ = CourseEnrollment.enrollment_mode_for_user(student, course_id)
         mode_is_verified = enrollment_mode in GeneratedCertificate.VERIFIED_CERTS_MODES
