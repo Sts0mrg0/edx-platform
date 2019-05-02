@@ -22,9 +22,9 @@ Decisions
 
 #. The app's Python APIs should be well-named, self-consistent, and relevant to its own "domain" (without exposing technical and implementation details).
 
-#. In the spirit of dis-entanglement and independence, an app's Django models and other internal data structures should not be exposed via its Python APIs.
+#. An app's Django models and other internal data structures should not be exposed via its Python APIs.
 
-#. Ideally, tests should use only Python APIs declared in other apps' "api.py" files. However, if an app's API is needed only for testing (and not needed as part of the app's domain API), then test-relevant Python APIs should be defined/exported in an intentional Python module called "test_api.py".
+#. Ideally, tests should use only Python APIs declared in other apps' "api.py" files. However, if an app's API is needed only for testing (and not needed as part of the app's domain API), then test-relevant Python APIs should be defined/exported in an intentional Python module called "api_for_tests.py".
 
 Exmaples
 ~~~~~~~~
