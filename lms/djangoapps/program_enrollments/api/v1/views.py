@@ -226,7 +226,7 @@ class ProgramCourseEnrollmentsView(ProgramCourseRunSpecificViewMixin, APIView):
             request,
             program_uuid,
             course_id,
-            self.modify_learner_enrollment
+            self.modify_learner_enrollment_status
         )
 
     def post(self, request, program_uuid=None, course_id=None):
@@ -333,14 +333,13 @@ class ProgramCourseEnrollmentsView(ProgramCourseRunSpecificViewMixin, APIView):
         if program_enrollment.get_program_course_enrollment(self.course_key):
             return CourseEnrollmentResponseStatuses.CONFLICT
 
-        enrollment_status = ProgramCourseEnrollment.enroll(
+        return ProgramCourseEnrollment.enroll(
             program_enrollment,
             self.course_key,
             enrollment_request['status']
         )
-        return enrollment_status
 
-    def modify_learner_enrollment(self, enrollment_request, program_enrollment):
+    def modify_learner_enrollment_status(self, enrollment_request, program_enrollment):
         """
         Attempts to modify the specified user's enrollment in the given course
         in the given program
@@ -353,20 +352,6 @@ class ProgramCourseEnrollmentsView(ProgramCourseRunSpecificViewMixin, APIView):
         program_course_enrollment = program_enrollment.get_program_course_enrollment(self.course_key)
         if program_course_enrollment is None:
             return CourseEnrollmentResponseStatuses.NOT_FOUND
-        
-        enrollment_status = enrollment_request['status']
-        current_status = program_course_enrollment.status
-        changing = enrollment_status != current_status
-        becoming_active = changing and enrollment_status == CourseEnrollmentResponseStatuses.ACTIVE
-        becoming_inactive = changing and enrollment_status == CourseEnrollmentResponseStatuses.INACTIVE
-        program_course_enrollment.status = enrollment_request
 
-        course_enrollment = program_course_enrollment.course_enrollment
-        if course_enrollment:
-            if becoming_active:
-                course_enrollment.activate()
-            elif becoming_inactive:
-                course_enrollment.deactivate()
-        elif program_enrollment.user:
-            print("log this filth")
-            
+        enrollment_status = enrollment_request['status']
+        return program_course_enrollment.change_status(enrollment_status)
